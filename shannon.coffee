@@ -57,12 +57,15 @@ class Predictor
     @statistics = new Int32Array(@stateCount)
     @curState = 0
     @shiftedState = 0
+    @count = 0
 
   record: (choiceIndex) ->
     @curState = @shiftedState + choiceIndex
     @shiftedState = @_shiftState(@curState)
+    @count += 1
 
-    @statistics[@curState] += 1
+    if @count >= @depth
+      @statistics[@curState] += 1
 
   predict: ->
     weights = (@statistics[@shiftedState + i] for i in [0 ... @choiceCount])
