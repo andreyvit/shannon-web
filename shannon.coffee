@@ -105,18 +105,15 @@ class MultiDepthPredictor
 
 
 class GameUI
-  constructor: (rootEl, options) ->
+  constructor: (rootEl, @options) ->
     @choiceButtons = $A(rootEl.querySelectorAll('.choice'))
     @stateEl = rootEl.querySelector('#state')
     @logEl = rootEl.querySelector('#log')
     @messageEl = rootEl.querySelector('#message')
+    @bulkInputEl = rootEl.querySelector('#bulk-input')
+    @bulkOutputEl = rootEl.querySelector('#bulk-output')
 
-    options.choices = @choiceButtons.map((button) -> button.textContent)
-
-    @game = new Game(this, options)
-    @lastPrediction = null
-    @nextPrediction = null
-    @lastMoveIndex = null
+    @options.choices = @choiceButtons.map((button) -> button.textContent)
 
     @choiceButtons.forEach (choiceButton, choiceIndex) =>
       choiceButton.addEventListener 'click', @makeMove.bind(@, choiceIndex), no
@@ -137,23 +134,45 @@ class GameUI
 
       @makeMove(index)
 
+    document.querySelector('#bulk-run').addEventListener 'click', @runBulk, no
+    document.querySelector('#bulk-random').addEventListener 'click', @runRandomBulkInput, no
+
+    @reset()
+    @generateRandomBulkInput()
+
+  generateRandomBulkInput: ->
+    bulkLength = 100
+    choices = @game.choices
+    @bulkInputEl.value = @game.indexesToMoves(Math.floor(Math.random() * choices.length) for i in [1 ... bulkLength]).join('')
+
+  runRandomBulkInput: =>
+    @generateRandomBulkInput()
+    @runBulk()
+
+  reset: ->
+    @game = new Game(this, @options)
+
   start: ->
     @_update()
 
   makeMove: (choiceIndex) ->
-    @lastMoveIndex = choiceIndex
     @game.makeMove(choiceIndex)
-    @game.recordResult(choiceIndex == @nextPrediction.bestChoiceIndex)
-
     @_update()
 
-  _update: ->
-    @lastPrediction = @nextPrediction
-    prediction = @nextPrediction = @game.predictor.predict()
+  runBulk: =>
+    bulkMoves = @game.movesToIndexes(@bulkInputEl.value.split(''))
+    @reset()
+    for move in bulkMoves
+      @game.makeMove(move)
+    @_update()
 
-    if @lastPrediction
-      lastPredictedMove = @game.choices[@lastPrediction.bestChoiceIndex]
-      lastActualMove = @game.choices[@lastMoveIndex]
+    @bulkInputEl.value = @game.indexesToMoves(@game.moves).join('')
+    @bulkOutputEl.textContent = @game.indexesToMoves(@game.predictions).join('')
+
+  _update: ->
+    if @game.lastPrediction
+      lastPredictedMove = @game.choices[@game.lastPrediction.bestChoiceIndex]
+      lastActualMove = @game.choices[@game.lastMoveIndex]
       if lastPredictedMove == lastActualMove
         message = "I've picked #{lastPredictedMove} — correctly!"
       else
@@ -168,7 +187,8 @@ class GameUI
     @stateEl.textContent =
       "Recent wins  #{@game.rollingWins} of #{@game.rollingRounds}, #{$F(rollingWinsPercentage, 1)}%\n" +
       "Overall wins #{@game.wins} of #{@game.rounds}, #{$F(winningPercentage, 1)}%\n\n" +
-      prediction.describe(@game.choices) + "\n\n" + @game.describe()
+      @game.nextPrediction.describe(@game.choices) + "\n\n" + @game.describe()
+
 
 
 class Game
@@ -179,15 +199,37 @@ class Game
     # @predictor = new Predictor(2, @choices.length)
     @ui = null
 
+    @moves = []
+    @predictions = []
+
     @wins = 0
     @rounds = 0
     @rollingWinLimit = 10
     @rollingWinStats = []
 
+    @lastPrediction = null
+    @nextPrediction = null
+    @lastMoveIndex = null
+
+    @_updatePrediction()
+
+
   makeMove: (choiceIndex) ->
+    @lastPrediction = @nextPrediction
+
+    @lastMoveIndex = choiceIndex
+    @moves.push(choiceIndex)
+    @predictions.push(@lastPrediction.bestChoiceIndex)
+
     @predictor.record(choiceIndex)
 
-  recordResult: (isWinning) ->
+    isWinning = (choiceIndex == @lastPrediction.bestChoiceIndex)
+    @_recordResult(isWinning)
+
+    @_updatePrediction()
+
+
+  _recordResult: (isWinning) ->
     @rounds += 1
     if isWinning
       @wins += 1
@@ -197,7 +239,16 @@ class Game
       @rollingWinStats.splice(0, @rollingWinStats.length - @rollingWinLimit)
 
     @rollingRounds = @rollingWinStats.length
-    @rollingWins = @rollingWinStats.reduce((a,b) -> a + b)
+    @rollingWins = ~~@rollingWinStats.reduce((a,b) -> a + b)
+
+  _updatePrediction: ->
+    @nextPrediction = @predictor.predict()
+
+  indexesToMoves: (indexes) ->
+    (@choices[i] for i in indexes)
+
+  movesToIndexes: (moves) ->
+    (@choices.indexOf(move) for move in moves)
 
   describe: ->
     if @options.maxDepth < 5
@@ -206,3 +257,4 @@ class Game
       ''
 
 new GameUI(document, { maxDepth: 20 }).start()
+
