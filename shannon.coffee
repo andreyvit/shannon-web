@@ -108,8 +108,9 @@ class MultiDepthPredictor
 
 
 class GameUI
-  constructor: (rootEl, @options) ->
+  constructor: (rootEl) ->
     @choiceButtons = $A(rootEl.querySelectorAll('.choice'))
+    @maxdepthEl = rootEl.querySelector('#maxdepth')
     @stateEl = rootEl.querySelector('#state')
     @logEl = rootEl.querySelector('#log')
     @messageEl = rootEl.querySelector('#message')
@@ -118,6 +119,7 @@ class GameUI
     @movesEl = rootEl.querySelector('#moves')
     @predictionsEl = rootEl.querySelector('#predictions')
 
+    @options = {}
     @options.choices = @choiceButtons.map((button) -> button.textContent)
 
     @choiceButtons.forEach (choiceButton, choiceIndex) =>
@@ -146,7 +148,23 @@ class GameUI
     document.querySelector('#bulk-specified').addEventListener 'click', @runSpecifiedBulk, no
     document.querySelector('#bulk-random').addEventListener 'click', @runRandomBulkInput, no
 
+    @loadOptions()
     @reset()
+
+    @maxdepthEl.addEventListener 'change', @saveOptions, no
+
+  loadOptions: ->
+    if localStorage.maxDepth
+      @options.maxDepth = localStorage.maxDepth
+    else
+      @options.maxDepth = 20
+
+    @maxdepthEl.value = @options.maxDepth
+
+  saveOptions: =>
+    @options.maxDepth = localStorage.maxDepth = ~~@maxdepthEl.value
+    @reset()
+    @_update()
 
   loadBulkInput: ->
     if localStorage.lastBulkInput
@@ -270,5 +288,5 @@ class Game
     else
       ''
 
-new GameUI(document, { maxDepth: 3 }).start()
+new GameUI(document).start()
 
