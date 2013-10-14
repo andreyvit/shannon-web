@@ -114,8 +114,9 @@ class GameUI
     @logEl = rootEl.querySelector('#log')
     @messageEl = rootEl.querySelector('#message')
     @bulkInputEl = rootEl.querySelector('#bulk-input')
-    @bulkOutputEl = rootEl.querySelector('#bulk-output')
+    @bulkLenEl = rootEl.querySelector('#bulk-len')
     @movesEl = rootEl.querySelector('#moves')
+    @predictionsEl = rootEl.querySelector('#predictions')
 
     @options.choices = @choiceButtons.map((button) -> button.textContent)
 
@@ -138,19 +139,37 @@ class GameUI
 
       @makeMove(index)
 
-    document.querySelector('#bulk-run').addEventListener 'click', @runBulk, no
+    @loadBulkInput()
+    @bulkInputEl.addEventListener 'change', @saveBulkInput, no
+    @bulkInputEl.addEventListener 'keydown', @saveBulkInput, no
+
+    document.querySelector('#bulk-specified').addEventListener 'click', @runSpecifiedBulk, no
     document.querySelector('#bulk-random').addEventListener 'click', @runRandomBulkInput, no
 
     @reset()
 
-  generateRandomBulkInput: ->
-    bulkLength = 100
-    choices = @game.choices
-    @bulkInputEl.value = @game.indexesToMoves(Math.floor(Math.random() * choices.length) for i in [1 ... bulkLength]).join('')
+  loadBulkInput: ->
+    if localStorage.lastBulkInput
+      @bulkInputEl.value = localStorage.lastBulkInput
+
+  saveBulkInput: =>
+    localStorage.lastBulkInput = @bulkInputEl.value
+
+  runSpecifiedBulk: =>
+    moves = @game.movesToIndexes(@bulkInputEl.value.split(''))
+    @runBulk(moves)
 
   runRandomBulkInput: =>
-    @generateRandomBulkInput()
-    @runBulk()
+    bulkLength = parseInt(@bulkLenEl.value, 10)
+    choiceCount = @game.choices.length
+    moves = (Math.floor(Math.random() * choiceCount) for i in [1 .. bulkLength])
+    @runBulk(moves)
+
+  runBulk: (moves) ->
+    @reset()
+    for move in moves
+      @game.makeMove(move)
+    @_update()
 
   reset: ->
     @game = new Game(this, @options)
@@ -161,15 +180,6 @@ class GameUI
   makeMove: (choiceIndex) ->
     @game.makeMove(choiceIndex)
     @_update()
-
-  runBulk: =>
-    bulkMoves = @game.movesToIndexes(@bulkInputEl.value.split(''))
-    @reset()
-    for move in bulkMoves
-      @game.makeMove(move)
-    @_update()
-
-    @bulkOutputEl.textContent = @game.indexesToMoves(@game.predictions).join('')
 
   _update: ->
     if @game.lastPrediction
@@ -190,8 +200,9 @@ class GameUI
       "Recent wins  #{@game.rollingWins} of #{@game.rollingRounds}, #{$F(rollingWinsPercentage, 1)}%\n" +
       "Overall wins #{@game.wins} of #{@game.rounds}, #{$F(winningPercentage, 1)}%\n\n" +
       @game.nextPrediction.describe(@game.choices) + "\n\n" + @game.describe()
-    @movesEl.textContent = @game.indexesToMoves(@game.moves).join('')
 
+    @movesEl.textContent = @game.indexesToMoves(@game.moves).join('') or 'none'
+    @predictionsEl.textContent = @game.indexesToMoves(@game.predictions).join('') or 'none'
 
 
 class Game

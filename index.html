@@ -8,16 +8,24 @@
     <!-- http://codepo8.github.io/css-fork-on-github-ribbon/ -->
     <style>#forkongithub a{background:#000;color:#fff;text-decoration:none;font-family:arial, sans-serif;text-align:center;font-weight:bold;padding:5px 40px;font-size:1rem;line-height:2rem;position:relative;transition:0.5s;}#forkongithub a:hover{background:#060;color:#fff;}#forkongithub a::before,#forkongithub a::after{content:"";width:100%;display:block;position:absolute;top:1px;left:0;height:1px;background:#fff;}#forkongithub a::after{bottom:1px;top:auto;}@media screen and (min-width:600px){#forkongithub{position:absolute;display:block;top:0;right:0;width:200px;overflow:hidden;height:200px;}#forkongithub a{width:200px;position:absolute;top:60px;right:-60px;transform:rotate(45deg);-webkit-transform:rotate(45deg);box-shadow:4px 4px 10px rgba(0,0,0,0.8);}}</style><span id="forkongithub"><a href="https://github.com/andreyvit/shannon-web">Fork me on GitHub</a></span>
 
-    <section id="bulk" style="float: right; width: 50%; margin: 10em 2em 0 2em">
+    <section id="bulk" style="float: right; width: 50%; margin: 8em 2em 0 2em">
         <h4>Bulk test</h4>
         <div>
             <textarea id="bulk-input" rows="5" style="width: 100%"></textarea>
         </div>
-        <pre id="bulk-output" style="word-wrap: break-word">(output goes here)</pre>
-        <div><button id="bulk-run">Run Specified Input</button> <button id="bulk-random">Run Random Input</button></div>
+        <div>
+            <button id="bulk-specified">Run Specified Input</button>
+        </div>
+        <br>
+        <div>
+            <button id="bulk-random">Run Random Input</button> of len <input id="bulk-len" value="100" style="width: 3em">
+        </div>
 
         <p>Moves so far (for your copying pleasure):</p>
         <pre id="moves" style="word-wrap: break-word">none</pre>
+
+        <p>Predictions so far:</p>
+        <pre id="predictions" style="word-wrap: break-word">none</pre>
     </section>
 
     <p id="message">Loading...</p>
