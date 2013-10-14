@@ -115,6 +115,7 @@ class GameUI
     @messageEl = rootEl.querySelector('#message')
     @bulkInputEl = rootEl.querySelector('#bulk-input')
     @bulkOutputEl = rootEl.querySelector('#bulk-output')
+    @movesEl = rootEl.querySelector('#moves')
 
     @options.choices = @choiceButtons.map((button) -> button.textContent)
 
@@ -141,7 +142,6 @@ class GameUI
     document.querySelector('#bulk-random').addEventListener 'click', @runRandomBulkInput, no
 
     @reset()
-    @generateRandomBulkInput()
 
   generateRandomBulkInput: ->
     bulkLength = 100
@@ -169,7 +169,6 @@ class GameUI
       @game.makeMove(move)
     @_update()
 
-    @bulkInputEl.value = @game.indexesToMoves(@game.moves).join('')
     @bulkOutputEl.textContent = @game.indexesToMoves(@game.predictions).join('')
 
   _update: ->
@@ -191,6 +190,7 @@ class GameUI
       "Recent wins  #{@game.rollingWins} of #{@game.rollingRounds}, #{$F(rollingWinsPercentage, 1)}%\n" +
       "Overall wins #{@game.wins} of #{@game.rounds}, #{$F(winningPercentage, 1)}%\n\n" +
       @game.nextPrediction.describe(@game.choices) + "\n\n" + @game.describe()
+    @movesEl.textContent = @game.indexesToMoves(@game.moves).join('')
 
 
 
@@ -259,5 +259,5 @@ class Game
     else
       ''
 
-new GameUI(document, { maxDepth: 20 }).start()
+new GameUI(document, { maxDepth: 3 }).start()
 
